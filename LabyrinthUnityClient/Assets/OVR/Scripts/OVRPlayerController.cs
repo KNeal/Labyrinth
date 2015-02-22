@@ -15,6 +15,8 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 using UnityEngine;
 using System.Collections.Generic;
 
+using Input = Moga_Input;
+
 [RequireComponent(typeof(CharacterController))]
 
 //-------------------------------------------------------------------------------------
@@ -37,7 +39,6 @@ public class OVRPlayerController : MonoBehaviour
 {
 	private GameObject mogaGameObject;
 	private Moga_ControllerManager mogaManager;
-	private Vector3 playerPos;
 
 	protected CharacterController 	Controller 		 = null;
 	protected OVRCameraController 	CameraController = null;
@@ -130,10 +131,14 @@ public class OVRPlayerController : MonoBehaviour
 		InitializeInputs();	
 		SetCameras();
 		
-                // Setup for the MOGA controller.
+        // Setup for the MOGA controller.
 		mogaGameObject = GameObject.Find ("MogaControllerManager");
-		mogaManager = mogaGameObject.GetComponent<Moga_ControllerManager> ();
+		if (mogaGameObject != null) 
+		{
+			mogaManager = mogaGameObject.GetComponent<Moga_ControllerManager> ();
+		}
 
+		Input.RegisterMogaController();
 	}
 		
 	/// <summary>

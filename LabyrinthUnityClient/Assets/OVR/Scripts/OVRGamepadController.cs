@@ -13,6 +13,8 @@ using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
 
+using Input = Moga_Input;
+
 
 //-------------------------------------------------------------------------------------
 // ***** OVRGamepadController
