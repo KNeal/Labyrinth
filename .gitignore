@@ -1,0 +1,20 @@
+
+#Folders
+Temp/
+Build/
+
+# Unity Files
+*.meta
+*.unityproj
+
+
+
+# Visual Studio Files
+*.suo
+*.user
+*.userprefs
+*.userosscache
+*.sln.docstates
+*.csproj
+
+
