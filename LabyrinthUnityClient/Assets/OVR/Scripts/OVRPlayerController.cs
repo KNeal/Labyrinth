@@ -210,6 +210,7 @@ public class OVRPlayerController : MonoBehaviour
 		bool moveLeft  	 = false;
 		bool moveRight   = false;
 		bool moveBack    = false;
+
 				
 		MoveScale = 1.0f;
 			
@@ -351,7 +352,18 @@ public class OVRPlayerController : MonoBehaviour
 		// Rotate
 		YRotation += rightAxisX * rotateInfluence;    
 		XRotation += rightAxisY * rotateInfluence;	// no idea why YRotation uses X axis and vice versa
-		
+
+
+		// Handle Jump
+		if(Input.GetKey(KeyCode.Space) || Input.GetKey(mogaManager.p1ButtonA))
+		{
+			// TODO: Figure out why JumpForce is not available in editor
+			JumpForce = 5.0f;
+			var force = JumpForce +=  Input.GetAxis( mogaManager.p1AxisR2 );
+
+			Jump(force);
+		}
+
 		// Update cameras direction and rotation
 		SetCameras();
 	}
@@ -377,13 +389,15 @@ public class OVRPlayerController : MonoBehaviour
 	
 	/// <summary>
 	/// Jump! Must be enabled manually.
-	/// </summary>
-	public bool Jump()
+	/// </summary> 
+	public bool Jump(float force)
 	{
+
 		if (!Controller.isGrounded)
 			return false;
 
-		MoveThrottle += new Vector3(0, JumpForce, 0);
+		MoveThrottle += new Vector3(0, force, 0);
+		Labyrinth.Utils.LogInfo ("JumpForce={0}", force);
 
 		return true;
 	}
