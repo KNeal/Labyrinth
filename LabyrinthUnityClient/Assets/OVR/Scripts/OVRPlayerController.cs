@@ -35,6 +35,10 @@ using System.Collections.Generic;
 /// </summary>
 public class OVRPlayerController : MonoBehaviour
 {
+	private GameObject mogaGameObject;
+	private Moga_ControllerManager mogaManager;
+	private Vector3 playerPos;
+
 	protected CharacterController 	Controller 		 = null;
 	protected OVRCameraController 	CameraController = null;
 
@@ -125,6 +129,11 @@ public class OVRPlayerController : MonoBehaviour
 	{
 		InitializeInputs();	
 		SetCameras();
+		
+                // Setup for the MOGA controller.
+		mogaGameObject = GameObject.Find ("MogaControllerManager");
+		mogaManager = mogaGameObject.GetComponent<Moga_ControllerManager> ();
+
 	}
 		
 	/// <summary>
@@ -175,6 +184,10 @@ public class OVRPlayerController : MonoBehaviour
 		// Update rotation using CameraController transform, possibly proving some rules for 
 		// sliding the rotation for a more natural movement and body visual
 		UpdatePlayerForwardDirTransform();
+
+                // Update the Global State
+		Labyrinth.Globals.Player.Location = transform.position;
+		Labyrinth.Globals.Player.Rotation = transform.eulerAngles;
 	}
 		
 	// UpdateMovement
@@ -210,7 +223,13 @@ public class OVRPlayerController : MonoBehaviour
 		if (Input.GetKey(KeyCode.LeftArrow))  moveLeft 	  = true;
 		if (Input.GetKey(KeyCode.DownArrow))  moveBack 	  = true; 
 		if (Input.GetKey(KeyCode.RightArrow)) moveRight   = true; 
-			
+		// MOGA keys
+		if (Input.GetKey(mogaManager.p1ButtonDPadUp))    moveForward = true;
+		if (Input.GetKey(mogaManager.p1ButtonDPadLeft))  moveLeft 	 = true;
+		if (Input.GetKey(mogaManager.p1ButtonDPadDown))  moveBack 	 = true; 
+		if (Input.GetKey(mogaManager.p1ButtonDPadRight)) moveRight   = true; 
+
+
 		if ( (moveForward && moveLeft) || (moveForward && moveRight) ||
 			 (moveBack && moveLeft)    || (moveBack && moveRight) )
 			MoveScale = 0.70710678f;
@@ -277,20 +296,23 @@ public class OVRPlayerController : MonoBehaviour
 		// Compute this for xinput movement
 		moveInfluence = OVRDevice.FrameRate * Time.deltaTime * Acceleration * 0.1f * MoveScale * MoveScaleMultiplier;
 			
-#if (!UNITY_ANDROID)	// LeftTrigger not avail on Android game pad
+//#if (!UNITY_ANDROID)	// LeftTrigger not avail on Android game pad
 		// Run!
-		moveInfluence *= 1.0f + 
-					     OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftTrigger);
-#endif
+		moveInfluence *= 1.0f + Input.GetAxis( mogaManager.p1AxisL2 );	
+					     //OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftTrigger);
+
+//#endif
 			
 		// Move
 		if(DirXform != null)
 		{
 			float leftAxisY = 
-				OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftYAxis);
+				//OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftYAxis);
+				-Input.GetAxis( mogaManager.p1AxisVertical ); // Need to invert the vertical so pushing forward moves forward.
 				
 			float leftAxisX = 
-				OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftXAxis);
+				//OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.LeftXAxis);
+				Input.GetAxis( mogaManager.p1AxisHorizontal );
 						
 			if(leftAxisY > 0.0f)
 	    		MoveThrottle += leftAxisY *
@@ -310,13 +332,15 @@ public class OVRPlayerController : MonoBehaviour
 		}
 			
 		float rightAxisX = 
-		OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.RightXAxis);
-	
+		//OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.RightXAxis);
+			Input.GetAxis( mogaManager.p1AxisLookHorizontal );
+
 #if (UNITY_ANDROID && !UNITY_EDITOR) // TODO: Only enable when sensor not active
 		float rightAxisY = 0.0f;
 #else
 		float rightAxisY = 
-		OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.RightYAxis);
+		//OVRGamepadController.GPC_GetAxis(OVRGamepadController.Axis.RightYAxis);
+			Input.GetAxis( mogaManager.p1AxisLookVertical );
 #endif
 
 		// Rotate

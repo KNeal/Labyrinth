@@ -5,3 +5,29 @@ Cmd: compileSnippet
   api=1 type=0 insize=2871 outsize=879 kw= ok=1
 Cmd: compileSnippet
   api=1 type=1 insize=2871 outsize=362 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=0 insize=2284 outsize=2181 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=2284 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=788 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=0 insize=1499 outsize=1635 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=1499 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=0 insize=984 outsize=818 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=984 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=9 type=0 insize=952 outsize=703 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=952 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=0 insize=1755 outsize=1308 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=1755 outsize=6 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=0 insize=2871 outsize=2560 kw= ok=1
+Cmd: compileSnippet
+  api=5 type=1 insize=2871 outsize=6 kw= ok=1

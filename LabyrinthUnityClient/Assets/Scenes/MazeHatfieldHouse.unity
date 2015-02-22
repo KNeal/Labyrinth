@@ -181,6 +181,67 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: .0219999999
+--- !u!1 &431277478
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 431277480}
+  - 114: {fileID: 431277479}
+  m_Layer: 0
+  m_Name: MogaControllerManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &431277479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 431277478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bad2c936022f6f45802aed4ff4887ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  p1ButtonA: 364
+  p1ButtonB: 363
+  p1ButtonX: 365
+  p1ButtonY: 362
+  p1ButtonL1: 358
+  p1ButtonR1: 359
+  p1ButtonSelect: 351
+  p1ButtonStart: 350
+  p1ButtonL3: 352
+  p1ButtonR3: 353
+  p1ButtonL2: 360
+  p1ButtonR2: 361
+  p1ButtonDPadUp: 356
+  p1ButtonDPadDown: 357
+  p1ButtonDPadLeft: 354
+  p1ButtonDPadRight: 355
+  p1AxisHorizontal: Horizontal
+  p1AxisVertical: Vertical
+  p1AxisLookHorizontal: LookHorizontal
+  p1AxisLookVertical: LookVertical
+  p1AxisL2: L2
+  p1AxisR2: R2
+--- !u!4 &431277480
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 431277478}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
 --- !u!1 &903339881
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,6 +282,7 @@ GameObject:
   - 143: {fileID: 946243286}
   - 114: {fileID: 946243285}
   - 114: {fileID: 946243284}
+  - 114: {fileID: 946243287}
   m_Layer: 0
   m_Name: OVRPlayerController
   m_TagString: Untagged
@@ -287,6 +349,18 @@ CharacterController:
   m_SkinWidth: .0799999982
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &946243287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 946243282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e685e5c8fa1c78e4fa96daf8a5371078, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controllerID: 1
 --- !u!1 &1225088464
 GameObject:
   m_ObjectHideFlags: 0
@@ -311,7 +385,7 @@ Transform:
   m_PrefabInternal: {fileID: 1533725397}
   m_GameObject: {fileID: 1225088464}
   m_LocalRotation: {x: .0624389462, y: .773660183, z: -.047549583, w: .628721237}
-  m_LocalPosition: {x: 0, y: 0, z: 109.300003}
+  m_LocalPosition: {x: 2, y: 0, z: 119}
   m_LocalScale: {x: 1, y: 1, z: .986278057}
   m_Children:
   - {fileID: 261982336}
@@ -412,7 +486,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 400008, guid: 9f983f115d90f9d47827ee32dfe4685c, type: 2}
       propertyPath: m_LocalPosition.z
-      value: 109.300003
+      value: 119
       objectReference: {fileID: 0}
     - target: {fileID: 400008, guid: 9f983f115d90f9d47827ee32dfe4685c, type: 2}
       propertyPath: m_LocalScale.z
@@ -433,6 +507,10 @@ Prefab:
     - target: {fileID: 400008, guid: 9f983f115d90f9d47827ee32dfe4685c, type: 2}
       propertyPath: m_LocalRotation.z
       value: -.047549583
+      objectReference: {fileID: 0}
+    - target: {fileID: 400008, guid: 9f983f115d90f9d47827ee32dfe4685c, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 9f983f115d90f9d47827ee32dfe4685c, type: 2}

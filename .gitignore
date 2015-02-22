@@ -2,11 +2,14 @@
 #Folders
 Temp/
 Build/
+Library/MetaData/
+Library/ScriptAssemblies/
 
 # Unity Files
 *.meta
 *.unityproj
-
+*.log
+*.bin
 
 
 # Visual Studio Files
@@ -16,5 +19,7 @@ Build/
 *.userosscache
 *.sln.docstates
 *.csproj
+*.dll
+*.mdb
 
 
