@@ -2,8 +2,7 @@
 #Folders
 LabyrinthClient/Temp/
 LabyrinthClient/Build/
-LabyrinthClient/Library/MetaData/
-LabyrinthClient/Library/ScriptAssemblies/
+LabyrinthClient/Library/
 /**/bin/
 /**/obj/
 

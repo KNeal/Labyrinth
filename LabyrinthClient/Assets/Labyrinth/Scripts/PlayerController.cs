@@ -10,6 +10,8 @@ namespace Labyrinth
     [RequireComponent(typeof (AudioSource))]
     public class PlayerController : MonoBehaviour 
     {
+        public static PlayerController Instance { get; private set; }
+
         [SerializeField] private bool m_IsWalking;
         [SerializeField] private float m_WalkSpeed;
         [SerializeField] private float m_RunSpeed;
@@ -55,8 +57,15 @@ namespace Labyrinth
             m_Jumping = false;
             m_AudioSource = GetComponent<AudioSource>();
 			m_MouseLook.Init(transform , m_Camera.transform);
+
+            Instance = this;
         }
 
+        public void OnDestroy()
+        {
+            Instance = null;
+        }
+       
 
         // Update is called once per frame
         private void Update()
@@ -236,7 +245,9 @@ namespace Labyrinth
 
         private void RotateView()
         {
-            m_MouseLook.LookRotation (transform, m_Camera.transform);
+            // Read input
+            float leftRight = InputManager.ActiveDevice.RightStick.X;
+            transform.Rotate(Vector3.up,  leftRight);
         }
 
 
