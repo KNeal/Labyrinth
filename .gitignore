@@ -1,9 +1,11 @@
 
 #Folders
-Temp/
-Build/
-Library/MetaData/
-Library/ScriptAssemblies/
+LabyrinthClient/Temp/
+LabyrinthClient/Build/
+LabyrinthClient/Library/MetaData/
+LabyrinthClient/Library/ScriptAssemblies/
+/**/bin/
+/**/obj/
 
 # Unity Files
 *.meta
