@@ -19,42 +19,42 @@ namespace Labyrinth
         [SerializeField] private float m_JumpSpeed;
         [SerializeField] private float m_StickToGroundForce;
         [SerializeField] private float m_GravityMultiplier;
+        [SerializeField] private float m_MaxFallSpeed;
+        [SerializeField] private float m_RotateMultiplier;
         [SerializeField] private MouseLook m_MouseLook;
-        [SerializeField] private bool m_UseFovKick;
-        [SerializeField] private FOVKick m_FovKick = new FOVKick();
-        [SerializeField] private bool m_UseHeadBob;
-        [SerializeField] private CurveControlledBob m_HeadBob = new CurveControlledBob();
-        [SerializeField] private LerpControlledBob m_JumpBob = new LerpControlledBob();
+
         [SerializeField] private float m_StepInterval;
         [SerializeField] private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
         [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
         [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
 
         private Camera m_Camera;
-        private bool m_Jump;
-        private float m_YRotation;
         private Vector2 m_Input;
         private Vector3 m_MoveDir = Vector3.zero;
         private CharacterController m_CharacterController;
         private CollisionFlags m_CollisionFlags;
         private bool m_PreviouslyGrounded;
-        private Vector3 m_OriginalCameraPosition;
         private float m_StepCycle;
         private float m_NextStep;
-        private bool m_Jumping;
         private AudioSource m_AudioSource;
+
+        private enum JumpState
+        {
+            None,
+            JumpPending,
+            Jumping
+        }
+
+        private JumpState m_JumpState;
 
         // Use this for initialization
         private void Start()
         {
             m_CharacterController = GetComponent<CharacterController>();
             m_Camera = Camera.main;
-            m_OriginalCameraPosition = m_Camera.transform.localPosition;
-            m_FovKick.Setup(m_Camera);
-            m_HeadBob.Setup(m_Camera, m_StepInterval);
             m_StepCycle = 0f;
             m_NextStep = m_StepCycle/2f;
-            m_Jumping = false;
+            m_JumpState = JumpState.None;;
             m_AudioSource = GetComponent<AudioSource>();
 			m_MouseLook.Init(transform , m_Camera.transform);
 
@@ -71,20 +71,25 @@ namespace Labyrinth
         private void Update()
         {
             RotateView();
+
             // the jump state needs to read here to make sure it is not missed
-            if (!m_Jump)
+            if (m_JumpState == JumpState.None)
             {
-                m_Jump = InputManager.ActiveDevice.Action1.IsPressed;
+                if (InputManager.ActiveDevice.Action1.IsPressed)
+                {
+                    Debug.Log("Jump Pressed");
+                    m_JumpState = JumpState.JumpPending;
+                }
             }
 
             if (!m_PreviouslyGrounded && m_CharacterController.isGrounded)
             {
-                StartCoroutine(m_JumpBob.DoBobCycle());
                 PlayLandingSound();
                 m_MoveDir.y = 0f;
-                m_Jumping = false;
+                m_JumpState = JumpState.None;
             }
-            if (!m_CharacterController.isGrounded && !m_Jumping && m_PreviouslyGrounded)
+
+            if (!m_CharacterController.isGrounded &&  m_JumpState == JumpState.None && m_PreviouslyGrounded)
             {
                 m_MoveDir.y = 0f;
             }
@@ -104,40 +109,55 @@ namespace Labyrinth
         private void FixedUpdate()
         {
             float speed;
-            GetInput(out speed);
-            // always move along the camera forward as it is the direction that it being aimed at
-            Vector3 desiredMove = transform.forward*m_Input.y + transform.right*m_Input.x;
 
-            // get a normal for the surface that is being touched to move along it
-            RaycastHit hitInfo;
-            Physics.SphereCast(transform.position, m_CharacterController.radius, Vector3.down, out hitInfo,
-                                m_CharacterController.height/2f, ~0, QueryTriggerInteraction.Ignore);
-            desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
+            // Only allow movement when we are not jumping.
+            if (m_JumpState == JumpState.None)
+            {
+                GetInput(out speed);
 
-            m_MoveDir.x = desiredMove.x*speed;
-            m_MoveDir.z = desiredMove.z*speed;
+                // always move along the camera forward as it is the direction that it being aimed at
+                Vector3 desiredMove = m_Camera.transform.forward * m_Input.y + m_Camera.transform.right * m_Input.x;
 
+                // get a normal for the surface that is being touched to move along it
+                RaycastHit hitInfo;
+                Physics.SphereCast(transform.position, m_CharacterController.radius, Vector3.down, out hitInfo,
+                    m_CharacterController.height/2f, ~0, QueryTriggerInteraction.Ignore);
+                desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
+
+                m_MoveDir.x = desiredMove.x*speed;
+                m_MoveDir.z = desiredMove.z*speed;
+            }
+            else
+            {
+                m_MoveDir.x = 0.0f;
+                m_MoveDir.z = 0.0f;
+                speed = 0;
+            }
 
             if (m_CharacterController.isGrounded)
             {
                 m_MoveDir.y = -m_StickToGroundForce;
 
-                if (m_Jump)
+                if ( m_JumpState == JumpState.JumpPending)
                 {
+                    Debug.Log("Starting Jump");
                     m_MoveDir.y = m_JumpSpeed;
                     PlayJumpSound();
-                    m_Jump = false;
-                    m_Jumping = true;
+                    m_JumpState = JumpState.Jumping;
                 }
             }
             else
             {
                 m_MoveDir += Physics.gravity*m_GravityMultiplier*Time.fixedDeltaTime;
+                if (m_MoveDir.y < -m_MaxFallSpeed)
+                {
+                    m_MoveDir.y = -m_MaxFallSpeed;
+                }
             }
+            
             m_CollisionFlags = m_CharacterController.Move(m_MoveDir*Time.fixedDeltaTime);
 
             ProgressStepCycle(speed);
-            UpdateCameraPosition(speed);
 
             m_MouseLook.UpdateCursorLock();
         }
@@ -185,38 +205,12 @@ namespace Labyrinth
             m_FootstepSounds[0] = m_AudioSource.clip;
         }
 
-
-        private void UpdateCameraPosition(float speed)
-        {
-            Vector3 newCameraPosition;
-            if (!m_UseHeadBob)
-            {
-                return;
-            }
-            if (m_CharacterController.velocity.magnitude > 0 && m_CharacterController.isGrounded)
-            {
-                m_Camera.transform.localPosition =
-                    m_HeadBob.DoHeadBob(m_CharacterController.velocity.magnitude +
-                                        (speed*(m_IsWalking ? 1f : m_RunstepLenghten)));
-                newCameraPosition = m_Camera.transform.localPosition;
-                newCameraPosition.y = m_Camera.transform.localPosition.y - m_JumpBob.Offset();
-            }
-            else
-            {
-                newCameraPosition = m_Camera.transform.localPosition;
-                newCameraPosition.y = m_OriginalCameraPosition.y - m_JumpBob.Offset();
-            }
-            m_Camera.transform.localPosition = newCameraPosition;
-        }
-
-
         private void GetInput(out float speed)
         {
             // Read input
             float horizontal = InputManager.ActiveDevice.LeftStick.X;
             float vertical = InputManager.ActiveDevice.LeftStick.Y;
 
-            bool waswalking = m_IsWalking;
 
 #if !MOBILE_INPUT
             // On standalone builds, walk/run speed is modified by a key press.
@@ -232,39 +226,15 @@ namespace Labyrinth
             {
                 m_Input.Normalize();
             }
-
-            // handle speed change to give an fov kick
-            // only if the player is going to a run, is running and the fovkick is to be used
-            if (m_IsWalking != waswalking && m_UseFovKick && m_CharacterController.velocity.sqrMagnitude > 0)
-            {
-                StopAllCoroutines();
-                StartCoroutine(!m_IsWalking ? m_FovKick.FOVKickUp() : m_FovKick.FOVKickDown());
-            }
         }
 
 
         private void RotateView()
         {
             // Read input
-            float leftRight = InputManager.ActiveDevice.RightStick.X;
-            transform.Rotate(Vector3.up,  leftRight);
-        }
+            float leftRight = InputManager.ActiveDevice.RightStick.X * m_RotateMultiplier;
 
-
-        private void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            Rigidbody body = hit.collider.attachedRigidbody;
-            //dont move the rigidbody if the character is on top of it
-            if (m_CollisionFlags == CollisionFlags.Below)
-            {
-                return;
-            }
-
-            if (body == null || body.isKinematic)
-            {
-                return;
-            }
-            body.AddForceAtPosition(m_CharacterController.velocity*0.1f, hit.point, ForceMode.Impulse);
+            transform.Rotate(Vector3.up, leftRight);
         }
     }
 
