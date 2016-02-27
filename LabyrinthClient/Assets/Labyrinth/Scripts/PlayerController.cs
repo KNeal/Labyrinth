@@ -5,17 +5,15 @@ using System.Collections;
 using InControl;
 
 namespace Labyrinth
-{  
+{
     [RequireComponent(typeof (CharacterController))]
     [RequireComponent(typeof (AudioSource))]
-    public class PlayerController : MonoBehaviour 
+    [RequireComponent(typeof(PhotonView))]
+    public class PlayerController : Photon.MonoBehaviour 
     {
         public static PlayerController Instance { get; private set; }
 
-        [SerializeField] private bool m_IsWalking;
-        [SerializeField] private float m_WalkSpeed;
-        [SerializeField] private float m_RunSpeed;
-        [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
+        [SerializeField] private float m_MoveSpeed;
         [SerializeField] private float m_JumpSpeed;
         [SerializeField] private float m_StickToGroundForce;
         [SerializeField] private float m_GravityMultiplier;
@@ -27,10 +25,11 @@ namespace Labyrinth
         [SerializeField] private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
         [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
         [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
-
-        private Camera m_Camera;
+        [SerializeField] private Camera m_Camera;
+        
         private Vector2 m_Input;
         private Vector3 m_MoveDir = Vector3.zero;
+        private PhotonView m_PhotonView;
         private CharacterController m_CharacterController;
         private CollisionFlags m_CollisionFlags;
         private bool m_PreviouslyGrounded;
@@ -47,18 +46,32 @@ namespace Labyrinth
 
         private JumpState m_JumpState;
 
+
         // Use this for initialization
         private void Start()
         {
+            m_PhotonView = GetComponent<PhotonView>();
             m_CharacterController = GetComponent<CharacterController>();
-            m_Camera = Camera.main;
+
+            gameObject.name = gameObject.name + photonView.viewID;
+
+            if (photonView.isMine)
+            {
+                m_CharacterController.enabled = true;
+                m_MouseLook.Init(transform, m_Camera.transform);
+
+                Instance = this;
+            }
+            else
+            {
+                m_CharacterController.enabled = false;
+                m_Camera.gameObject.SetActive(false);
+            }
+
             m_StepCycle = 0f;
             m_NextStep = m_StepCycle/2f;
             m_JumpState = JumpState.None;;
             m_AudioSource = GetComponent<AudioSource>();
-			m_MouseLook.Init(transform , m_Camera.transform);
-
-            Instance = this;
         }
 
         public void OnDestroy()
@@ -70,12 +83,25 @@ namespace Labyrinth
         // Update is called once per frame
         private void Update()
         {
+            if (photonView.isMine)
+            {
+                UpdateLocalPlayerPosition();
+            }
+            else
+            {
+                UpdateRemotePlayerPosition();
+            }
+        }
+
+        private void UpdateLocalPlayerPosition()
+        {
             RotateView();
 
             // the jump state needs to read here to make sure it is not missed
             if (m_JumpState == JumpState.None)
             {
-                if (InputManager.ActiveDevice.Action1.IsPressed)
+                if (InputManager.ActiveDevice.Action1.IsPressed 
+                    || Input.GetKeyDown(KeyCode.Space))
                 {
                     Debug.Log("Jump Pressed");
                     m_JumpState = JumpState.JumpPending;
@@ -95,8 +121,8 @@ namespace Labyrinth
             }
 
             m_PreviouslyGrounded = m_CharacterController.isGrounded;
-        }
 
+        }
 
         private void PlayLandingSound()
         {
@@ -105,15 +131,24 @@ namespace Labyrinth
             m_NextStep = m_StepCycle + .5f;
         }
 
-
         private void FixedUpdate()
         {
-            float speed;
+            if (photonView.isMine)
+            {
+                FixedUpdateLocalPlayerPosition();
+            }
+            else
+            {
+                // Do nothing.
+            }
+        }
 
+        private void FixedUpdateLocalPlayerPosition()
+        {
             // Only allow movement when we are not jumping.
             if (m_JumpState == JumpState.None)
             {
-                GetInput(out speed);
+                UpdateInput();
 
                 // always move along the camera forward as it is the direction that it being aimed at
                 Vector3 desiredMove = m_Camera.transform.forward * m_Input.y + m_Camera.transform.right * m_Input.x;
@@ -124,14 +159,13 @@ namespace Labyrinth
                     m_CharacterController.height/2f, ~0, QueryTriggerInteraction.Ignore);
                 desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
 
-                m_MoveDir.x = desiredMove.x*speed;
-                m_MoveDir.z = desiredMove.z*speed;
+                m_MoveDir.x = desiredMove.x * m_MoveSpeed;
+                m_MoveDir.z = desiredMove.z * m_MoveSpeed;
             }
             else
             {
                 m_MoveDir.x = 0.0f;
                 m_MoveDir.z = 0.0f;
-                speed = 0;
             }
 
             if (m_CharacterController.isGrounded)
@@ -149,7 +183,7 @@ namespace Labyrinth
             else
             {
                 m_MoveDir += Physics.gravity*m_GravityMultiplier*Time.fixedDeltaTime;
-                if (m_MoveDir.y < -m_MaxFallSpeed)
+                if (m_MaxFallSpeed > 0 && m_MoveDir.y < -m_MaxFallSpeed)
                 {
                     m_MoveDir.y = -m_MaxFallSpeed;
                 }
@@ -157,7 +191,7 @@ namespace Labyrinth
             
             m_CollisionFlags = m_CharacterController.Move(m_MoveDir*Time.fixedDeltaTime);
 
-            ProgressStepCycle(speed);
+            ProgressStepCycle();
 
             m_MouseLook.UpdateCursorLock();
         }
@@ -170,11 +204,11 @@ namespace Labyrinth
         }
 
 
-        private void ProgressStepCycle(float speed)
+        private void ProgressStepCycle()
         {
             if (m_CharacterController.velocity.sqrMagnitude > 0 && (m_Input.x != 0 || m_Input.y != 0))
             {
-                m_StepCycle += (m_CharacterController.velocity.magnitude + (speed*(m_IsWalking ? 1f : m_RunstepLenghten)))*
+                m_StepCycle += (m_CharacterController.velocity.magnitude + m_MoveSpeed)*
                                 Time.fixedDeltaTime;
             }
 
@@ -187,8 +221,7 @@ namespace Labyrinth
 
             PlayFootStepAudio();
         }
-
-
+        
         private void PlayFootStepAudio()
         {
             if (!m_CharacterController.isGrounded)
@@ -205,20 +238,38 @@ namespace Labyrinth
             m_FootstepSounds[0] = m_AudioSource.clip;
         }
 
-        private void GetInput(out float speed)
+        private void UpdateInput()
         {
             // Read input
-            float horizontal = InputManager.ActiveDevice.LeftStick.X;
-            float vertical = InputManager.ActiveDevice.LeftStick.Y;
+            float horizontal;
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                horizontal = -1.0f;
+            }
+            else if (Input.GetKeyDown(KeyCode.D))
+            {
+                horizontal = 1.0f;
+            }
+            else
+            {
+                horizontal = InputManager.ActiveDevice.LeftStick.X;
+            }
 
+            float vertical;
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                vertical = -1.0f;
+            }
+            else if (Input.GetKeyDown(KeyCode.W))
+            {
+                vertical = 1.0f;
+            }
+            else
+            {
+                vertical = InputManager.ActiveDevice.LeftStick.Y;
+            }
 
-#if !MOBILE_INPUT
-            // On standalone builds, walk/run speed is modified by a key press.
-            // keep track of whether or not the character is walking or running
-            m_IsWalking = !Input.GetKey(KeyCode.LeftShift);
-#endif
             // set the desired speed to be walking or running
-            speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
             m_Input = new Vector2(horizontal, vertical);
 
             // normalize input if it exceeds 1 in combined length:
@@ -236,6 +287,36 @@ namespace Labyrinth
 
             transform.Rotate(Vector3.up, leftRight);
         }
+
+#region Photon
+        
+    void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.isWriting)
+        {
+            // We own this player: send the others our data
+            stream.SendNext(transform.position);
+            stream.SendNext(transform.rotation); 
+        }
+        else
+        {
+            //Network player, receive data
+            correctPlayerPos = (Vector3)stream.ReceiveNext();
+            correctPlayerRot = (Quaternion)stream.ReceiveNext();
+        }
+    }
+
+    private Vector3 correctPlayerPos = Vector3.zero; //We lerp towards this
+    private Quaternion correctPlayerRot = Quaternion.identity; //We lerp towards this
+
+    void UpdateRemotePlayerPosition()
+    {
+        // Update remote player (smooth this, this looks good, at the cost of some accuracy)
+        transform.position = Vector3.Lerp(transform.position, correctPlayerPos, Time.deltaTime * 5);
+        transform.rotation = Quaternion.Lerp(transform.rotation, correctPlayerRot, Time.deltaTime * 5);
+    }
+
+#endregion
     }
 
 }
